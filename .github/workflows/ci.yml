@@ -1,0 +1,275 @@
+name: CI/CD
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'Select which job to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - lint
+          - validate
+          - security
+          - draft-release
+          - release
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name != 'workflow_dispatch' ||
+      inputs.job == 'all' ||
+      inputs.job == 'lint' ||
+      inputs.job == 'draft-release' ||
+      inputs.job == 'release'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run ruff check
+        run: uv run ruff check custom_components/
+
+      - name: Run ruff format check
+        run: uv run ruff format --check custom_components/
+
+  validate-hacs:
+    name: HACS Action Validation
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name != 'workflow_dispatch' ||
+      inputs.job == 'all' ||
+      inputs.job == 'validate' ||
+      inputs.job == 'draft-release' ||
+      inputs.job == 'release'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: HACS Action
+        uses: hacs/action@main
+        with:
+          category: integration
+          ignore: brands
+
+  validate-hassfest:
+    name: Home Assistant Validation
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name != 'workflow_dispatch' ||
+      inputs.job == 'all' ||
+      inputs.job == 'validate' ||
+      inputs.job == 'draft-release' ||
+      inputs.job == 'release'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Hassfest validation
+        uses: home-assistant/actions/hassfest@master
+
+  secrets:
+    name: Secret Scan (TruffleHog)
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name != 'workflow_dispatch' ||
+      inputs.job == 'all' ||
+      inputs.job == 'security' ||
+      inputs.job == 'release'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: TruffleHog OSS
+        uses: trufflesecurity/trufflehog@31ce31ee1abbcc7dc8eee5764c17121c3044c8b2 # v3.99.7
+
+  trivy:
+    name: Vulnerability Scan (Trivy)
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name != 'workflow_dispatch' ||
+      inputs.job == 'all' ||
+      inputs.job == 'security' ||
+      inputs.job == 'release'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '1'
+          severity: 'HIGH,CRITICAL'
+
+  all-checks:
+    name: All Checks Passed
+    if: always()
+    needs: [lint, validate-hacs, validate-hassfest, secrets, trivy]
+    outputs:
+      success: ${{ steps.check.outputs.success }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all jobs
+        id: check
+        run: |
+          LINT_RESULT="${{ needs.lint.result }}"
+          HACS_RESULT="${{ needs.validate-hacs.result }}"
+          HASS_RESULT="${{ needs.validate-hassfest.result }}"
+          SECRETS_RESULT="${{ needs.secrets.result }}"
+          TRIVY_RESULT="${{ needs.trivy.result }}"
+          if [[ "$LINT_RESULT" == "success" || "$LINT_RESULT" == "skipped" ]] && \
+             [[ "$HACS_RESULT" == "success" || "$HACS_RESULT" == "skipped" ]] && \
+             [[ "$HASS_RESULT" == "success" || "$HASS_RESULT" == "skipped" ]] && \
+             [[ "$SECRETS_RESULT" == "success" || "$SECRETS_RESULT" == "skipped" ]] && \
+             [[ "$TRIVY_RESULT" == "success" || "$TRIVY_RESULT" == "skipped" ]]; then
+            echo "success=true" >> $GITHUB_OUTPUT
+            echo "All executed checks passed!"
+          else
+            echo "success=false" >> $GITHUB_OUTPUT
+            echo "One or more checks failed"
+            exit 1
+          fi
+
+  draft-release:
+    name: Draft Release
+    runs-on: ubuntu-latest
+    needs: [all-checks]
+    if: |
+      always() &&
+      needs.all-checks.outputs.success == 'true' &&
+      (
+        (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+        (github.event_name == 'workflow_dispatch' && (inputs.job == 'all' || inputs.job == 'draft-release'))
+      )
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check version change
+        id: check_version
+        shell: bash
+        run: |
+          CURRENT_VERSION=$(grep -m 1 '^version =' pyproject.toml | cut -d '"' -f 2)
+          PREVIOUS_VERSION=$(git show HEAD~1:pyproject.toml 2>/dev/null | grep -m 1 '^version =' | cut -d '"' -f 2 || echo "")
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          elif [ -n "$PREVIOUS_VERSION" ] && [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Git tag
+        if: steps.check_version.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git rev-parse "v${{ steps.check_version.outputs.version }}" >/dev/null 2>&1; then
+            echo "Tag v${{ steps.check_version.outputs.version }} already exists"
+          else
+            git tag -a "v${{ steps.check_version.outputs.version }}" -m "Release v${{ steps.check_version.outputs.version }}"
+            git push origin "v${{ steps.check_version.outputs.version }}"
+          fi
+
+      - name: Build HACS Zip Asset
+        if: steps.check_version.outputs.changed == 'true'
+        shell: bash
+        run: |
+          cd custom_components
+          zip -r ../casambi_classic_bt.zip casambi_classic_bt
+          cd ..
+
+      - name: Generate Changelog
+        if: steps.check_version.outputs.changed == 'true'
+        shell: bash
+        run: |
+          git fetch --tags --force
+          TAGS=$(git tag --sort=-v:refname | grep -E '^v[0-9]')
+          TAG_COUNT=$(echo "$TAGS" | grep -c -E '^v[0-9]' || echo 0)
+          echo "## Changelog" > changelog.md
+          echo "" >> changelog.md
+          if [ "$TAG_COUNT" -le 1 ]; then
+            git log --pretty=format:"* %s (%h)" --no-merges >> changelog.md
+          else
+            PREV_TAG=$(echo "$TAGS" | sed -n '2p')
+            git log ${PREV_TAG}..HEAD --pretty=format:"* %s (%h)" --no-merges >> changelog.md
+          fi
+          echo "" >> changelog.md
+
+      - name: Create Release Draft
+        if: steps.check_version.outputs.changed == 'true'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: v${{ steps.check_version.outputs.version }}
+          name: v${{ steps.check_version.outputs.version }}
+          draft: true
+          body_path: changelog.md
+          files: casambi_classic_bt.zip
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    name: Publish Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs: [all-checks]
+    if: |
+      always() &&
+      needs.all-checks.outputs.success == 'true' &&
+      (
+        (github.event_name == 'release' && github.event.action == 'published') ||
+        (github.event_name == 'workflow_dispatch' && inputs.job == 'release')
+      )
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Build HACS Zip Asset
+        shell: bash
+        run: |
+          cd custom_components
+          zip -r ../casambi_classic_bt.zip casambi_classic_bt
+          cd ..
+
+      - name: Upload Zip to Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: casambi_classic_bt.zip
+          token: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,20 @@
+{
+  "domain": "casambi_classic_bt",
+  "name": "Casambi Classic Bluetooth",
+  "bluetooth": [
+    {
+      "service_uuid": "0000fe4d-0000-1000-8000-00805f9b34fb",
+      "manufacturer_id": 963,
+      "connectable": true
+    }
+  ],
+  "codeowners": ["@hellqvio86"],
+  "config_flow": true,
+  "dependencies": ["bluetooth_adapters"],
+  "documentation": "https://github.com/hellqvio86/casambi-classic-bt-hass",
+  "integration_type": "hub",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/hellqvio86/casambi-classic-bt-hass/issues",
+  "requirements": ["casambi-classic-ble>=0.3.0"],
+  "version": "0.3.3"
+}

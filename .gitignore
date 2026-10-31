@@ -171,4 +171,7 @@ poetry.toml
 # End of https://www.toptal.com/developers/gitignore/api/python
 
 casambi_classic_bt.zip
+casambi.yaml
+casambi*.local.yaml
+
 

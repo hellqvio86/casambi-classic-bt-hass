@@ -98,7 +98,7 @@ Write clean, idiomatic, and modern Python (Python `>= 3.12`):
    - Clean up event listeners, periodic timers, and Bluetooth advertisement callbacks when entries unload (`async_unload_entry`).
 
 5. **Manifest Rules & Invariants:**
-   - Keys in [`custom_components/casambi_classic_bt/manifest.json`](file:///home/hellqvio/git/casambi-classic-bt-hass/custom_components/casambi_classic_bt/manifest.json) must be sorted in exact alphabetical order: `domain`, `name`, then `bluetooth`, `codeowners`, `config_flow`, `dependencies`, `documentation`, `integration_type`, `iot_class`, `issue_tracker`, `requirements`, `version`.
+   - Keys in [`custom_components/casambi_classic_bt/manifest.json`](custom_components/casambi_classic_bt/manifest.json) must be sorted in exact alphabetical order: `domain`, `name`, then `bluetooth`, `codeowners`, `config_flow`, `dependencies`, `documentation`, `integration_type`, `iot_class`, `issue_tracker`, `requirements`, `version`.
    - Strict `continue-on-error: false` is enforced on Hassfest and HACS validations.
    - Requirement must point to `casambi-classic-ble` (e.g. `"casambi-classic-ble>=0.3.0"`), **never `casambi-bt`**.
 

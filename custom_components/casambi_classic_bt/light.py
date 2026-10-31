@@ -80,21 +80,23 @@ class CasambiLight(CasambiEntity, LightEntity, metaclass=ABCMeta):
 
     def _capabilities_helper(self, unit: Unit) -> set[ColorMode]:
         supported: set[ColorMode] = set()
-        unit_modes = [uc.type for uc in unit.unitType.controls]
+        unit_modes = {
+            uc.type.value if hasattr(uc.type, "value") else uc.type for uc in unit.unitType.controls
+        }
 
-        if UnitControlType.RGB in unit_modes and UnitControlType.WHITE in unit_modes:
+        if UnitControlType.RGB.value in unit_modes and UnitControlType.WHITE.value in unit_modes:
             supported.add(ColorMode.RGBW)
-        elif UnitControlType.RGB in unit_modes:
+        elif UnitControlType.RGB.value in unit_modes:
             supported.add(ColorMode.RGB)
-        if UnitControlType.TEMPERATURE in unit_modes:
+        if UnitControlType.TEMPERATURE.value in unit_modes:
             supported.add(ColorMode.COLOR_TEMP)
-        if UnitControlType.XY in unit_modes:
+        if UnitControlType.XY.value in unit_modes:
             supported.add(ColorMode.XY)
 
         if len(supported) == 0:
-            if UnitControlType.DIMMER in unit_modes:
+            if UnitControlType.DIMMER.value in unit_modes:
                 supported.add(ColorMode.BRIGHTNESS)
-            elif UnitControlType.ONOFF in unit_modes:
+            elif UnitControlType.ONOFF.value in unit_modes:
                 supported.add(ColorMode.ONOFF)
             else:
                 supported.add(ColorMode.UNKNOWN)

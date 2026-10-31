@@ -216,8 +216,12 @@ class CasambiApi:
         if not control_types:
             return self._casa.units
 
+        control_values = {ct.value if hasattr(ct, "value") else ct for ct in control_types}
         return filter(
-            lambda u: any(uc.type in control_types for uc in u.unitType.controls),  # type: ignore[arg-type]
+            lambda u: any(
+                (uc.type.value if hasattr(uc.type, "value") else uc.type) in control_values
+                for uc in u.unitType.controls
+            ),
             self._casa.units,
         )
 

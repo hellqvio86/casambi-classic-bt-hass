@@ -627,3 +627,52 @@ async def test_disconnect_handles_timeout_and_exceptions(
 
     assert api._unloaded is True
     assert api._reconnect_task is None
+
+
+@pytest.mark.asyncio
+async def test_canary_password_never_logged_or_persisted_in_plaintext(
+    mock_hass: HomeAssistant,
+    mock_ble_device: BLEDevice,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Verify canary network password never appears in logs or plaintext cache files."""
+    canary_password = "CANARY_SUPER_SECRET_PASSWORD_987654321"
+    entry = ConfigEntry(
+        entry_id="canary_entry_id",
+        data={
+            CONF_ADDRESS: MOCK_MAC,
+            CONF_PASSWORD: canary_password,
+        },
+    )
+
+    mock_casa = MagicMock()
+    mock_casa.connect = AsyncMock()
+    mock_casa.connected = True
+    mock_casa.disconnect = AsyncMock()
+    mock_casa.register_disconnect_callback = MagicMock()
+    mock_casa.register_unit_changed_handler = MagicMock()
+    mock_casa.unregister_disconnect_callback = MagicMock()
+    mock_casa.unregister_unit_changed_handler = MagicMock()
+
+    import logging
+
+    with (
+        caplog.at_level(logging.DEBUG),
+        patch(
+            "custom_components.casambi_classic_bt.bluetooth.async_ble_device_from_address",
+            return_value=mock_ble_device,
+        ),
+        patch(
+            "custom_components.casambi_classic_bt.Casambi",
+            return_value=mock_casa,
+        ),
+        patch(
+            "custom_components.casambi_classic_bt.get_async_client",
+            return_value=MagicMock(),
+        ),
+    ):
+        await async_setup_entry(hass=mock_hass, entry=entry)
+        await async_unload_entry(hass=mock_hass, entry=entry)
+
+    # Assert canary password never appeared in any log record
+    assert canary_password not in caplog.text

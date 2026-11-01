@@ -1,5 +1,6 @@
 """Pytest fixtures and lightweight Home Assistant test stubs for casambi_classic_bt tests."""
 
+import asyncio
 import sys
 import types
 from enum import IntFlag, StrEnum
@@ -68,6 +69,11 @@ if "homeassistant" not in sys.modules:
             def __init__(self, entry_id: str = "test_entry_id", data: dict[str, Any] | None = None):
                 self.entry_id = entry_id
                 self.data = data or {}
+
+            def async_create_background_task(
+                self, hass: Any, target: Any, name: str | None = None
+            ) -> asyncio.Task:
+                return asyncio.create_task(target, name=name)
 
         class ConfigFlow:
             VERSION = 1
@@ -283,6 +289,8 @@ def mock_hass(tmp_path: Path) -> HomeAssistant:
     """Return a mocked HomeAssistant instance."""
     hass = MagicMock()
     hass.config.config_dir = str(tmp_path)
+    hass.data = {}
+    hass.is_stopping = False
 
     async def _async_add_executor_job(target: Any, *args: Any, **kwargs: Any) -> Any:
         return target(*args, **kwargs)
@@ -293,6 +301,8 @@ def mock_hass(tmp_path: Path) -> HomeAssistant:
     hass.config_entries.async_get_entry = MagicMock()
     hass.config_entries.async_update_entry = MagicMock(return_value=True)
     hass.config_entries.async_reload = AsyncMock()
+    hass.config_entries.async_forward_entry_setups = AsyncMock(return_value=True)
+    hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
     hass.async_create_task = MagicMock(side_effect=lambda task: task)
 
     return hass

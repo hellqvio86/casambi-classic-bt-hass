@@ -80,7 +80,7 @@ class CasambiVerticalNumber(CasambiEntity, NumberEntity, metaclass=ABCMeta):
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the vertical value."""
-        await self._api.casa.setVertical(self._obj, int(value))
+        await self._api.casa.set_vertical(target=self._obj, vertical=int(value))
 
 
 class CasambiVerticalNumberUnit(CasambiVerticalNumber, CasambiUnitEntity):

@@ -6,8 +6,7 @@ from typing import Any
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from casambi_classic_ble import Casambi
-from casambi_classic_ble.errors import AuthenticationError, NetworkNotFoundError
+from casambi_classic_ble import AuthenticationError, Casambi, NetworkNotFoundError
 from homeassistant import config_entries
 from homeassistant.components.bluetooth import (
     async_ble_device_from_address,

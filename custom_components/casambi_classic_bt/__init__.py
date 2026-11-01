@@ -8,12 +8,16 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Any, Final, cast
 
-from casambi_classic_ble import Casambi, Group, Scene, Unit, UnitControlType
-from casambi_classic_ble.errors import (
+from casambi_classic_ble import (
     AuthenticationError,
     BluetoothDeviceNotFoundError,
     BluetoothError,
+    Casambi,
+    Group,
     ProtocolError,
+    Scene,
+    Unit,
+    UnitControlType,
 )
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
@@ -109,8 +113,8 @@ class CasambiApi:
             if not device:
                 raise BluetoothDeviceNotFoundError  # noqa: TRY301
 
-            self._casa.registerDisconnectCallback(self._casa_disconnect)
-            self._casa.registerUnitChangedHandler(self._unit_changed_handler)
+            self._casa.register_disconnect_callback(self._casa_disconnect)
+            self._casa.register_unit_changed_handler(self._unit_changed_handler)
 
             uuid = self.address.replace(":", "").lower()
             cached_net_id_file = get_cache_dir(self.hass) / uuid / "networkid"
@@ -118,7 +122,9 @@ class CasambiApi:
             if force_offline:
                 _LOGGER.info("Connecting to %s in offline mode using pre-cached keys", self.address)
 
-            await self._casa.connect(device, self.password, forceOffline=force_offline)
+            await self._casa.connect(
+                address=device, password=self.password, force_offline=force_offline
+            )
         except BluetoothError as err:
             raise ConfigEntryNotReady("Failed to use bluetooth") from err
         except BluetoothDeviceNotFoundError as err:

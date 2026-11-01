@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.1] - 2026-11-01
+
+### Fixed
+- Aligned config flow (`_validate_input`) with canonical keyword-only `casambi-classic-ble` API:
+  - Replaced deprecated `invalidateCache` with `invalidate_cache(uuid=...)`.
+  - Replaced positional `connect` and camelCase `forceOffline` with `connect(address=..., password=..., force_offline=...)`.
+  - Replaced deprecated property `networkName` with `network_name`.
+  - Wrapped `casa.connect` in a `try...finally` block ensuring `casa.disconnect()` is always called on auth failures, errors, or cancellation, preventing BLE connection leaks.
+  - Offloaded blocking filesystem cache existence checks to executor (`hass.async_add_executor_job`).
+- Replaced deprecated `unregisterDisconnectCallback` and `unregisterUnitChangedHandler` with canonical `unregister_disconnect_callback` and `unregister_unit_changed_handler`.
+- Added comprehensive pytest test suite covering config flow validation, reauth, cancellation safety, error mapping, and public API contract assertions.
+
 ## [0.6.0] - 2026-11-01
 
 ### Changed

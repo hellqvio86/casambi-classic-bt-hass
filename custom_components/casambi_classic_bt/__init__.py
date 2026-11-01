@@ -105,7 +105,10 @@ class CasambiApi:
         self.conf_entry = conf_entry
         self.address = address
         self.password = password
-        self._casa = Casambi(get_async_client(hass), get_cache_dir(hass))
+        self._casa = Casambi(
+            http_client=get_async_client(hass),
+            cache_path=get_cache_dir(hass),
+        )
         self.casa = cast(Casambi, CasambiProxy(self, self._casa))
 
         self._callback_map: dict[int, list[Callable[[Unit], None]]] = {}
@@ -130,12 +133,12 @@ class CasambiApi:
             if not device:
                 raise BluetoothDeviceNotFoundError  # noqa: TRY301
 
-            self._casa.register_disconnect_callback(self._casa_disconnect)
-            self._casa.register_unit_changed_handler(self._unit_changed_handler)
+            self._casa.register_disconnect_callback(callback=self._casa_disconnect)
+            self._casa.register_unit_changed_handler(handler=self._unit_changed_handler)
 
             uuid = self.address.replace(":", "").lower()
             cached_net_id_file = get_cache_dir(self.hass) / uuid / "networkid"
-            force_offline = cached_net_id_file.exists()
+            force_offline = await self.hass.async_add_executor_job(cached_net_id_file.exists)
             if force_offline:
                 _LOGGER.info("Connecting to %s in offline mode using pre-cached keys", self.address)
 
@@ -178,7 +181,7 @@ class CasambiApi:
                 if not device:
                     raise BluetoothDeviceNotFoundError  # noqa: TRY301
 
-                await self._casa.reconnect(device)
+                await self._casa.reconnect(address=device)
                 if self._casa.connected:
                     _LOGGER.info("Successfully reconnected to Casambi network %s", self.address)
                     break
@@ -285,13 +288,13 @@ class CasambiApi:
 
         # This needs to happen before we disconnect.
         # We don't want to be informed about disconnects initiated by us.
-        self._casa.unregisterDisconnectCallback(self._casa_disconnect)
+        self._casa.unregister_disconnect_callback(callback=self._casa_disconnect)
 
         try:
             await self._casa.disconnect()
         except Exception:
             _LOGGER.exception("Error during disconnect.")
-        self._casa.unregisterUnitChangedHandler(self._unit_changed_handler)
+        self._casa.unregister_unit_changed_handler(handler=self._unit_changed_handler)
 
     @callback
     def _watchdog_callback(self, _now: Any) -> None:

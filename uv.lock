@@ -277,7 +277,7 @@ wheels = [
 
 [[package]]
 name = "casambi-classic-bt-hass"
-version = "0.8.0"
+version = "0.8.1"
 source = { virtual = "." }
 
 [package.dev-dependencies]

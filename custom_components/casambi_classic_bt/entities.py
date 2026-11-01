@@ -67,7 +67,7 @@ class CasambiNetworkEntity(CasambiEntity, metaclass=ABCMeta):
     @property
     def unique_id(self) -> str:
         """Return the unique ID for this entity."""
-        name = f"{self._api.casa.networkId}"
+        name = f"{self._api.casa.network_id}"
         if self._obj is not None:
             if isinstance(self._obj, CasambiScene):
                 name += "-scene"
@@ -80,10 +80,10 @@ class CasambiNetworkEntity(CasambiEntity, metaclass=ABCMeta):
     def device_info(self) -> DeviceInfo:
         """Return device information about this Casambi entity."""
         return DeviceInfo(
-            name=self._api.casa.networkName,
+            name=self._api.casa.network_name,
             manufacturer="Casambi",
             model="Network",
-            identifiers={(DOMAIN, self._api.casa.networkId)},
+            identifiers={(DOMAIN, self._api.casa.network_id)},
             connections={(device_registry.CONNECTION_BLUETOOTH, self._api.address)},
         )
 
@@ -151,7 +151,7 @@ class CasambiUnitEntity(CasambiEntity, metaclass=ABCMeta):
         """Return an unique identifier for the unit."""
         unit = cast("CasambiUnit", self._obj)
         desc = cast("TypedEntityDescription", self.entity_description)
-        return f"{self._api.casa.networkId}-unit-{unit.uuid}-{desc.entity_type}"
+        return f"{self._api.casa.network_id}-unit-{unit.uuid}-{desc.entity_type}"
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -165,7 +165,7 @@ class CasambiUnitEntity(CasambiEntity, metaclass=ABCMeta):
             identifiers={(DOMAIN, unit.uuid)},
             via_device_id=device_registry.async_get_device_id_by_identifier(
                 self.hass,
-                (DOMAIN, self._api.casa.networkId),
+                (DOMAIN, self._api.casa.network_id),
                 config_entry_id=self._api.conf_entry.entry_id,
             ),
         )

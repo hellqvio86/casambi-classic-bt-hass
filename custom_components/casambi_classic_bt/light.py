@@ -218,7 +218,7 @@ class CasambiLightUnit(CasambiLight, CasambiUnitEntity):
             set_state = True
 
         if set_state:
-            await self._api.casa.set_unit_state(unit=unit, state=state)
+            await self._api.casa.set_unit_state(target=unit, state=state)
         else:
             await self._api.casa.turn_on(target=self._obj)
 
@@ -248,7 +248,7 @@ class CasambiLightGroup(CasambiLight, CasambiNetworkGroup):
         else:
             self._attr_supported_color_modes = {ColorMode.ONOFF}
 
-        desc = TypedEntityDescription(key=str(group.groudId), name=group.name, entity_type="light")
+        desc = TypedEntityDescription(key=str(group.group_id), name=group.name, entity_type="light")
 
         super().__init__(api, desc, group)
 
@@ -313,11 +313,11 @@ class CasambiLightGroup(CasambiLight, CasambiNetworkGroup):
             )
             was_set = True
         if ATTR_RGB_COLOR in kwargs:
-            await self._api.casa.set_color(target=self._obj, rgb=kwargs[ATTR_RGB_COLOR])
+            await self._api.casa.set_color(target=self._obj, rgb_color=kwargs[ATTR_RGB_COLOR])
             was_set = True
         elif ATTR_RGBW_COLOR in kwargs:
             rgb, w = kwargs[ATTR_RGBW_COLOR][:3], kwargs[ATTR_RGBW_COLOR][3]
-            await self._api.casa.set_color(target=self._obj, rgb=rgb)
+            await self._api.casa.set_color(target=self._obj, rgb_color=rgb)
             await self._api.casa.set_white(target=self._obj, level=w)
             was_set = True
 

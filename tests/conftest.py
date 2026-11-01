@@ -2,7 +2,7 @@
 
 import sys
 import types
-from enum import StrEnum
+from enum import IntFlag, StrEnum
 from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
@@ -177,6 +177,79 @@ if "homeassistant" not in sys.modules:
         ha_event = types.ModuleType("homeassistant.helpers.event")
         ha_event.async_track_time_interval = MagicMock()
         sys.modules["homeassistant.helpers.event"] = ha_event
+
+        # homeassistant.helpers.entity
+        ha_entity = types.ModuleType("homeassistant.helpers.entity")
+
+        class Entity:
+            def __init__(self) -> None:
+                self.hass: Any = None
+                self.entity_id: str = ""
+
+            def async_write_ha_state(self) -> None:
+                pass
+
+        from dataclasses import dataclass
+
+        @dataclass(kw_only=True)
+        class EntityDescription:
+            key: str = ""
+            name: str | None = None
+
+        class DeviceInfo(dict):
+            pass
+
+        ha_entity.Entity = Entity
+        ha_entity.EntityDescription = EntityDescription
+        ha_entity.DeviceInfo = DeviceInfo
+        sys.modules["homeassistant.helpers.entity"] = ha_entity
+
+        # homeassistant.helpers.entity_platform
+        ha_platform = types.ModuleType("homeassistant.helpers.entity_platform")
+        ha_platform.AddEntitiesCallback = Any
+        sys.modules["homeassistant.helpers.entity_platform"] = ha_platform
+
+        # homeassistant.components.light
+        ha_light = types.ModuleType("homeassistant.components.light")
+        ha_light.ATTR_BRIGHTNESS = "brightness"
+        ha_light.ATTR_COLOR_TEMP_KELVIN = "color_temp_kelvin"
+        ha_light.ATTR_RGB_COLOR = "rgb_color"
+        ha_light.ATTR_RGBW_COLOR = "rgbw_color"
+        ha_light.ATTR_XY_COLOR = "xy_color"
+
+        class ColorMode(StrEnum):
+            UNKNOWN = "unknown"
+            ONOFF = "onoff"
+            BRIGHTNESS = "brightness"
+            COLOR_TEMP = "color_temp"
+            RGB = "rgb"
+            RGBW = "rgbw"
+            XY = "xy"
+
+        class LightEntityFeature(IntFlag):
+            EFFECT = 1
+
+        class LightEntity(Entity):
+            @property
+            def supported_color_modes(self) -> set[ColorMode] | None:
+                return getattr(self, "_attr_supported_color_modes", None)
+
+            @property
+            def color_mode(self) -> ColorMode | None:
+                return getattr(self, "_attr_color_mode", None)
+
+            @property
+            def brightness(self) -> int | None:
+                return getattr(self, "_attr_brightness", None)
+
+            @property
+            def is_on(self) -> bool | None:
+                return getattr(self, "_attr_is_on", None)
+
+        ha_light.ColorMode = ColorMode
+        ha_light.LightEntityFeature = LightEntityFeature
+        ha_light.LightEntity = LightEntity
+        sys.modules["homeassistant.components.light"] = ha_light
 
         # homeassistant.exceptions
         ha_exc = types.ModuleType("homeassistant.exceptions")

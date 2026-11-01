@@ -1,6 +1,6 @@
 [project]
 name = "casambi-classic-bt-hass"
-version = "0.8.0"
+version = "0.8.1"
 description = "Home Assistant custom integration for Casambi Classic networks using Bluetooth"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -10,7 +10,7 @@ authors = [
 
 [dependency-groups]
 dev = [
-    "casambi-classic-ble>=0.8.0",
+    "casambi-classic-ble>=0.8.1",
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
     "ruff>=0.8.0",

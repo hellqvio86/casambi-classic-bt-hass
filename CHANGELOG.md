@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.4] - 2026-11-01
+
+### Changed
+- Bumped integration version to `0.3.4` and updated minimum library requirement to `casambi-classic-ble>=0.3.4`.
+
+## [0.3.3] - 2026-10-31
+
+### Changed
+- Bumped integration version to `0.3.3` and updated minimum library requirement to `casambi-classic-ble>=0.3.3`.
+
 ## [0.3.2] - 2026-10-31
 
 ### Added

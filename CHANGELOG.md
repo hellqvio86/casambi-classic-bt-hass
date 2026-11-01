@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-11-01
+
+### Changed
+- Bumped integration version to `0.4.0` and updated minimum library requirement to `casambi-classic-ble>=0.4.0`.
+- Ensured clean background task cancellation and cleanup on disconnect/reconnect cycles.
+- Added cross-platform file/directory permissions abstraction (`utils.permissions`) and sensitive logging sanitization (`utils.mask`).
+- Migrated legacy cache files to JSON (`casambi_session.json`, `casambi_types.json`, `casambi_network_id.txt`).
+- Fixed advertisement frame duplicate suppression and color temperature clamping.
+
 ## [0.3.6] - 2026-11-01
 
 ### Changed

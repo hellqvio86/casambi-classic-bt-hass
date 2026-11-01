@@ -46,7 +46,7 @@ async def _validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str
     """
     client = get_async_client(hass)
     cache_dir = get_cache_dir(hass)
-    casa = Casambi(client, cache_dir)
+    casa = Casambi(http_client=client, cache_path=cache_dir)
     bt_device = async_ble_device_from_address(hass, data[CONF_ADDRESS], connectable=True)
 
     if not bt_device:
@@ -54,19 +54,30 @@ async def _validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str
 
     uuid = bt_device.address.replace(":", "").lower()
     cached_net_id_file = cache_dir / uuid / "networkid"
-    has_cache = cached_net_id_file.exists()
+    has_cache = await hass.async_add_executor_job(cached_net_id_file.exists)
 
     if not has_cache:
-        await casa.invalidateCache(bt_device.address)
-        await casa.connect(bt_device, data[CONF_PASSWORD])
-    else:
-        _LOGGER.info("Using cached network configuration for %s (offline mode)", bt_device.address)
-        await casa.connect(bt_device, data[CONF_PASSWORD], forceOffline=True)
+        await casa.invalidate_cache(uuid=bt_device.address)
 
-    network_name = casa.networkName
-
-    # We need to disconnect again because otherwise setup will fail
-    await casa.disconnect()
+    try:
+        if has_cache:
+            _LOGGER.info(
+                "Using cached network configuration for %s (offline mode)", bt_device.address
+            )
+        await casa.connect(
+            address=bt_device,
+            password=data[CONF_PASSWORD],
+            force_offline=has_cache,
+        )
+        network_name = casa.network_name or data[CONF_ADDRESS]
+    finally:
+        # We need to disconnect again because otherwise setup will fail or leak BLE connection
+        try:
+            await casa.disconnect()
+        except Exception as err:
+            _LOGGER.debug(
+                "Error disconnecting temporary session for %s: %s", bt_device.address, err
+            )
 
     # Return info that you want to store in the config entry.
     return {"title": network_name, "id": data[CONF_ADDRESS]}

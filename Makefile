@@ -1,4 +1,4 @@
-.PHONY: help setup lint format clean hooks package secrets trivy
+.PHONY: help setup lint format clean hooks package secrets trivy test
 
 help:
 	@echo "Available commands:"
@@ -7,6 +7,7 @@ help:
 	@echo "  make secrets   - Run TruffleHog secret scanning"
 	@echo "  make trivy     - Run Trivy vulnerability scanning"
 	@echo "  make lint      - Run ruff lint and format check"
+	@echo "  make test      - Run pytest unit test suite"
 	@echo "  make format    - Format code with ruff"
 	@echo "  make package   - Build HACS zip archive (casambi_classic_bt.zip)"
 	@echo "  make clean     - Clean temporary files"
@@ -32,13 +33,17 @@ setup: hooks
 
 lint:
 	@echo "Running linting..."
-	uv run ruff check custom_components/
-	uv run ruff format --check custom_components/
+	uv run ruff check custom_components/ tests/
+	uv run ruff format --check custom_components/ tests/
+
+test:
+	@echo "Running tests..."
+	uv run pytest tests/ -v
 
 format:
 	@echo "Formatting code..."
-	uv run ruff format custom_components/
-	uv run ruff check --fix custom_components/
+	uv run ruff format custom_components/ tests/
+	uv run ruff check --fix custom_components/ tests/
 
 clean:
 	@echo "Cleaning up..."

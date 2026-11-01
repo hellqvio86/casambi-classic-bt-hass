@@ -53,10 +53,13 @@ jobs:
         run: uv sync
 
       - name: Run ruff check
-        run: uv run ruff check custom_components/
+        run: uv run ruff check custom_components/ tests/
 
       - name: Run ruff format check
-        run: uv run ruff format --check custom_components/
+        run: uv run ruff format --check custom_components/ tests/
+
+      - name: Run unit tests
+        run: uv run pytest tests/ -v
 
   validate-hacs:
     name: HACS Action Validation

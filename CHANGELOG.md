@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.0] - 2026-11-01
+
+### Changed
+- Bumped integration version to `0.7.0` and updated minimum library requirement to `casambi-classic-ble>=0.7.0`.
+- Includes formal cryptographic contract, golden vectors, Classic-only boundary enforcement, and complete raw packet hex logging for all malformed frames.
+
 ## [0.6.1] - 2026-11-01
 
 ### Fixed

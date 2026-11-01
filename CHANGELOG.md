@@ -2,10 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.5.0] - 2026-11-01
+## [0.5.1] - 2026-11-01
 
 ### Changed
-- Bumped integration version to `0.5.0` and updated minimum library requirement to `casambi-classic-ble>=0.5.0`.
+- Bumped integration version to `0.5.1` and updated minimum library requirement to `casambi-classic-ble>=0.5.1`.
 - Modernized integration API calls to use snake_case keyword-only methods (`turn_on`, `turn_off`, `set_level`, `set_color`, `set_temperature`, `set_white`, `switch_to_scene`, `set_vertical`, `set_unit_state`).
 - Updated exception imports directly from `casambi_classic_ble` root namespace, eliminating deprecation warnings.
 - Switched to snake_case properties `network_id` and `network_name`.

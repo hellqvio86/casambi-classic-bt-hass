@@ -12,6 +12,8 @@
             "cannot_connect": "Kon geen verbinding maken",
             "invalid_address": "The bluetooth MAC address of the network is invalid.",
             "invalid_auth": "Foutieve authenticatie",
+            "timeout": "Verbindingstime-out.",
+            "unsupported_firmware": "Niet-ondersteunde firmwareversie. Deze integratie ondersteunt alleen Casambi Classic-firmware.",
             "unknown": "Onverwachte fout"
         },
         "step": {

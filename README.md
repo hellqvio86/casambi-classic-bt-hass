@@ -86,6 +86,34 @@ logger:
 
 ---
 
+## Operational Limitations & Hardware Compatibility
+
+- **Reverse-Engineered Protocol Scope:** Casambi does not publish an official specification for the Classic BLE GATT protocol. This integration and its underlying library ([`casambi-classic-ble`](https://github.com/hellqvio86/casambi-classic-ble)) implement behavior observed and verified against real Classic firmware fixtures:
+  - **Vadsbo LD220WCM** (Trailing-edge phase-cut dimmer, Classic FW `26.x`)
+  - **Vadsbo LD220WCM_onoff** (On/off relay module, Classic FW `26.x`)
+  - **Casambi CBU-PWM4 RGBW** (4-channel PWM dimmer, Classic FW `26.x`)
+  - **AIMOTION GLOW** (Pendant luminaire, Classic FW `26.x`)
+  - **EnOcean PTM215B** (4-button kinetic BLE switch, Classic FW `20.x`–`26.x`)
+- **Single Active BLE Connection Limit:** Casambi mesh nodes accept only **one active Bluetooth Low Energy GATT connection** at a time. If the official Casambi mobile app (iOS or Android) is open in the foreground or background on a smartphone or tablet in range, it will hold the GATT connection and cause Home Assistant connection attempts to time out. Force-close the mobile app before setting up or reconnecting in Home Assistant.
+- **Local BLE Control vs. Initial Cloud Topology Discovery:**
+  - Real-time light control, scene switching, and state updates run locally over BLE GATT.
+  - Initial setup and password changes (re-authentication) contact the Casambi API once to fetch the network's topology (unit names, groups, scenes, fixture profiles, and Visitor/Manager signing keys) and cache them under `<config>/.storage/casambi_classic_bt/<uuid>/`.
+- **What "Offline Support" Means:**
+  - Once a network has been set up online and cached in `<config>/.storage/casambi_classic_bt/`, subsequent Home Assistant restarts can connect and authenticate over BLE completely offline using the cached topology and signing keys.
+  - First-time setup, password changes, or newly added fixtures/groups/scenes cannot be discovered offline and require internet access during setup/reload.
+
+---
+
+## Safe Troubleshooting & Diagnostics
+
+- **Close the Casambi App:** If setup fails with `Failed to connect` or `Connection timed out`, verify that no phone or tablet has the official Casambi app open.
+- **Bluetooth Adapter / ESPHome Proxy Range:** Ensure your Home Assistant Bluetooth adapter (BlueZ `>= 5.64`) or ESPHome Bluetooth proxy has `connectable: true` enabled and adequate signal (`RSSI > -80 dBm`) to at least one mesh unit.
+- **Never Share Secrets or Unredacted Identifiers:**
+  - When opening an issue or sharing logs, **never publish your network password, cached `.storage/casambi_classic_bt/` JSON files (`casambi_lookup.json`, `casambi_session.json`), raw packet captures, or real Bluetooth MAC addresses**.
+  - At standard `INFO` log level, MAC addresses (`AA:**:**:**:**:FF`) and credentials are automatically masked. When `debug` logging is enabled, sanitize any real MAC addresses (`AA:BB:CC:DD:EE:FF`) before posting logs publicly.
+
+---
+
 ## Development
 
 This repository uses [`uv`](https://docs.astral.sh/uv/) and [`ruff`](https://docs.astral.sh/ruff/) for dependency management and linting.

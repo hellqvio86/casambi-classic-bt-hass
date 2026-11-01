@@ -1,6 +1,7 @@
 """The Casambi Bluetooth integration."""
 
 import asyncio
+import functools
 import inspect
 import logging
 from collections.abc import Callable, Iterable
@@ -18,6 +19,7 @@ from casambi_classic_ble import (
     Scene,
     Unit,
     UnitControlType,
+    mask_mac,
 )
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
@@ -41,6 +43,23 @@ from .const import (
 )
 
 _LOGGER: Final = logging.getLogger(__name__)
+
+
+def _fallback_check_cached_network(*, cache_path: Path, address: str) -> bool:
+    """Check cached network metadata when running against casambi-classic-ble < 0.8.5."""
+    from casambi_classic_ble._constants import (
+        LEGACY_NETWORK_ID_CACHE_FILE,
+        NETWORK_ID_CACHE_FILE,
+    )
+
+    uuid = address.replace(":", "").lower()
+    net_dir = cache_path / uuid
+    return any(
+        (net_dir / name).exists() for name in (NETWORK_ID_CACHE_FILE, LEGACY_NETWORK_ID_CACHE_FILE)
+    )
+
+
+_CHECK_CACHED_NETWORK = getattr(Casambi, "check_cached_network", _fallback_check_cached_network)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -151,16 +170,25 @@ class CasambiApi:
             if not device:
                 raise BluetoothDeviceNotFoundError  # noqa: TRY301
 
-            self._casa.register_disconnect_callback(callback=self._casa_disconnect)
-            self._disconnect_cb_registered = True
-            self._casa.register_unit_changed_handler(handler=self._unit_changed_handler)
-            self._unit_changed_cb_registered = True
+            if not self._disconnect_cb_registered:
+                self._casa.register_disconnect_callback(callback=self._casa_disconnect)
+                self._disconnect_cb_registered = True
+            if not self._unit_changed_cb_registered:
+                self._casa.register_unit_changed_handler(handler=self._unit_changed_handler)
+                self._unit_changed_cb_registered = True
 
-            uuid = self.address.replace(":", "").lower()
-            cached_net_id_file = get_cache_dir(self.hass) / uuid / "networkid"
-            force_offline = await self.hass.async_add_executor_job(cached_net_id_file.exists)
+            force_offline = await self.hass.async_add_executor_job(
+                functools.partial(
+                    _CHECK_CACHED_NETWORK,
+                    cache_path=get_cache_dir(self.hass),
+                    address=self.address,
+                )
+            )
             if force_offline:
-                _LOGGER.info("Connecting to %s in offline mode using pre-cached keys", self.address)
+                _LOGGER.info(
+                    "Connecting to %s in offline mode using pre-cached keys",
+                    mask_mac(self.address, is_debug=_LOGGER.isEnabledFor(logging.DEBUG)),
+                )
 
             await self._casa.connect(
                 address=device, password=self.password, force_offline=force_offline
@@ -313,7 +341,7 @@ class CasambiApi:
         return filter(
             lambda u: any(
                 (uc.type.value if hasattr(uc.type, "value") else uc.type) in control_values
-                for uc in u.unitType.controls
+                for uc in u.unit_type.controls
             ),
             self._casa.units,
         )
@@ -390,7 +418,9 @@ class CasambiApi:
         :param unit: The unit for which changes should be reported.
         :param c: The callback.
         """
-        self._callback_map.setdefault(unit.deviceId, []).append(c)
+        callbacks = self._callback_map.setdefault(unit.device_id, [])
+        if c not in callbacks:
+            callbacks.append(c)
 
     def unregister_unit_updates(self, unit: Unit, c: Callable[[Unit], None]) -> None:
         """Unregister a callback for unit updates.
@@ -398,13 +428,14 @@ class CasambiApi:
         :param unit: The unit for which changes should no longer be reported.
         :param c: The callback.
         """
-        self._callback_map[unit.deviceId].remove(c)
+        if unit.device_id in self._callback_map and c in self._callback_map[unit.device_id]:
+            self._callback_map[unit.device_id].remove(c)
 
     @callback
     def _unit_changed_handler(self, unit: Unit) -> None:
-        if unit.deviceId not in self._callback_map:
+        if unit.device_id not in self._callback_map:
             return
-        for c in self._callback_map[unit.deviceId]:
+        for c in list(self._callback_map[unit.device_id]):
             c(unit)
 
     @callback

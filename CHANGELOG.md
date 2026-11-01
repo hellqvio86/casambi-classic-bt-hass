@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.7] - 2026-11-01
+
+### Changed
+- Bumped integration version to `0.3.7` and updated minimum library requirement to `casambi-classic-ble>=0.3.7`.
+- Migrated legacy cache files to JSON (`casambi_session.json`, `casambi_types.json`, `casambi_network_id.txt`) with automatic migration and deprecation warnings.
+- Added cross-platform file and directory permissions abstraction (`utils.permissions`) and reusable sensitive logging sanitizer (`utils.mask`).
+
 ## [0.3.6] - 2026-11-01
 
 ### Changed

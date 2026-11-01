@@ -4,7 +4,7 @@ requires-python = ">=3.12"
 
 [[package]]
 name = "casambi-classic-bt-hass"
-version = "0.3.6"
+version = "0.3.7"
 source = { virtual = "." }
 
 [package.dev-dependencies]

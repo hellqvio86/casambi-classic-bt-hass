@@ -96,6 +96,7 @@ Write clean, idiomatic, and modern Python (Python `>= 3.12`):
 4. **Resource Safety & Background Tasks:**
    - Manage Home Assistant background tasks with `config_entry.async_create_background_task(hass, ...)`.
    - Clean up event listeners, periodic timers, and Bluetooth advertisement callbacks when entries unload (`async_unload_entry`).
+   - **Never use bare `except:` clauses.** Always catch explicit exception types and **always name exception variables `err`** (`except ... as err:`). Never use `e` or `exc`.
 
 5. **Manifest Rules & Invariants:**
    - Keys in [`custom_components/casambi_classic_bt/manifest.json`](custom_components/casambi_classic_bt/manifest.json) must be sorted in exact alphabetical order: `domain`, `name`, then `bluetooth`, `codeowners`, `config_flow`, `dependencies`, `documentation`, `integration_type`, `iot_class`, `issue_tracker`, `requirements`, `version`.

@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.5] - 2026-11-01
+
+### Changed
+- Bumped integration version to `0.3.5` and updated minimum library requirement to `casambi-classic-ble>=0.3.5`.
+- Updated key storage backend to use `casambi_lookup.json` with seamless migration from legacy cache.
+- Dispatched GATT notifications to unified device state subscribers with per-unit deduplication.
+
 ## [0.3.4] - 2026-11-01
 
 ### Changed

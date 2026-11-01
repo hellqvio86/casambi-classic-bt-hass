@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.0] - 2026-11-01
+
+### Changed
+- Bumped integration version to `0.8.0` and updated minimum library requirement to `casambi-classic-ble>=0.8.0`.
+- Includes crash-safe atomic cache persistence, strict cache format validation, and complete internal modernization to canonical `snake_case` APIs with deprecation warnings for legacy wrappers.
+
 ## [0.7.0] - 2026-11-01
 
 ### Changed

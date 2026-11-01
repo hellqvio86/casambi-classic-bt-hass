@@ -259,7 +259,7 @@ wheels = [
 
 [[package]]
 name = "casambi-classic-ble"
-version = "0.7.0"
+version = "0.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -270,14 +270,14 @@ dependencies = [
     { name = "httpx" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3e/6e/4ff2667ef5cc775e30c4f745ca3855c6a5751e17112e997837e3d1fbc02d/casambi_classic_ble-0.7.0.tar.gz", hash = "sha256:61e69483d8d659f979ba17dde06d8aec7064739346aae64db3dbcd98d5460ce7", size = 62175, upload-time = "2026-11-01T14:51:52.114Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/af/f9/1f8aea1efe207ff8b613c0a2b5ffd1b263e7fa8495f813a19887a58fc23f/casambi_classic_ble-0.8.0.tar.gz", hash = "sha256:4740d8d36b3d9cfc2efa2fa69233f62954e552f345d8383c0d2c96b418642840", size = 65696, upload-time = "2026-11-01T16:01:32.876Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/49/be/076c4ce02013b56292a2b79a23c763d502a29c33dc9842d25771636d7328/casambi_classic_ble-0.7.0-py3-none-any.whl", hash = "sha256:8dd57738c3a1eb62a43e60a6560605140489fddec20c0a5561276d2f3f169887", size = 66940, upload-time = "2026-11-01T14:51:50.616Z" },
+    { url = "https://files.pythonhosted.org/packages/c1/5c/2650f42201df2fc3cdfa6200e0f6b277f72881714af2af1498567d546513/casambi_classic_ble-0.8.0-py3-none-any.whl", hash = "sha256:f8980a618ef80e41a63e3a774e2df5f7cb3c2b859818f488140c4879e91deb80", size = 71007, upload-time = "2026-11-01T16:01:31.643Z" },
 ]
 
 [[package]]
 name = "casambi-classic-bt-hass"
-version = "0.7.0"
+version = "0.8.0"
 source = { virtual = "." }
 
 [package.dev-dependencies]
@@ -293,7 +293,7 @@ dev = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "casambi-classic-ble", specifier = ">=0.7.0" },
+    { name = "casambi-classic-ble", specifier = ">=0.8.0" },
     { name = "pytest", specifier = ">=8.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.24.0" },
     { name = "ruff", specifier = ">=0.8.0" },

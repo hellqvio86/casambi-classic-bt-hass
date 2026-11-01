@@ -39,7 +39,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up binary sensor."""
-    _LOGGER.debug("Setting up binary sensor entities. config_entry: %s", config_entry)
+    _LOGGER.debug("Setting up binary sensor entities. config_entry: %s", config_entry.entry_id)
     api: CasambiApi = hass.data[DOMAIN][config_entry.entry_id]
     binary_sensors = []
 

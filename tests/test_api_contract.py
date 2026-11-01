@@ -9,12 +9,12 @@ from casambi_classic_ble import Casambi
 
 
 def test_casambi_classic_ble_minimum_version() -> None:
-    """Verify that installed casambi-classic-ble satisfies declared minimum >=0.8.0."""
+    """Verify that installed casambi-classic-ble satisfies declared minimum >=0.8.1."""
     from packaging.version import Version
 
     version = getattr(casambi_classic_ble, "__version__", None)
     assert version is not None, "casambi_classic_ble must declare __version__"
-    assert Version(version) >= Version("0.8.0")
+    assert Version(version) >= Version("0.8.1")
 
 
 def test_casambi_public_api_signatures() -> None:

@@ -10,7 +10,7 @@ authors = [
 
 [dependency-groups]
 dev = [
-    "casambi-classic-ble>=0.8.0",
+    "casambi-classic-ble>=0.8.1",
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
     "ruff>=0.8.0",

@@ -28,6 +28,7 @@ from homeassistant.exceptions import (
     ConfigEntryError,
     ConfigEntryNotReady,
 )
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.httpx_client import get_async_client
 
@@ -64,6 +65,22 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    device_entry: dr.DeviceEntry,
+) -> bool:
+    """Allow removing a device that is no longer part of this Casambi network."""
+    api: CasambiApi = hass.data[DOMAIN][config_entry.entry_id]
+    live_identifiers: set[tuple[str, str]] = set()
+    if api.casa and api.casa.network_id:
+        live_identifiers.add((DOMAIN, str(api.casa.network_id)))
+    for unit in api.get_units():
+        live_identifiers.add((DOMAIN, str(unit.uuid)))
+
+    return not bool(device_entry.identifiers & live_identifiers)
 
 
 def get_cache_dir(hass: HomeAssistant) -> Path:

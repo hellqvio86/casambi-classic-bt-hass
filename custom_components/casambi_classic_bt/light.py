@@ -234,9 +234,19 @@ class CasambiLightGroup(CasambiLight, CasambiNetworkGroup):
         for unit in group.units:
             supported_modes = supported_modes.union(self._capabilities_helper(unit))
 
-        if len(supported_modes) == 0:
-            supported_modes.add(ColorMode.UNKNOWN)
-        self._attr_supported_color_modes = supported_modes
+        # Home Assistant rejects BRIGHTNESS or ONOFF alongside color modes,
+        # and rejects UNKNOWN outright.
+        real_modes = {
+            m
+            for m in supported_modes
+            if m not in (ColorMode.BRIGHTNESS, ColorMode.ONOFF, ColorMode.UNKNOWN)
+        }
+        if real_modes:
+            self._attr_supported_color_modes = real_modes
+        elif ColorMode.BRIGHTNESS in supported_modes:
+            self._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
+        else:
+            self._attr_supported_color_modes = {ColorMode.ONOFF}
 
         desc = TypedEntityDescription(key=str(group.groudId), name=group.name, entity_type="light")
 

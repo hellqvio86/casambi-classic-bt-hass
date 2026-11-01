@@ -2,7 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.5.1] - 2026-11-01
+## [0.6.0] - 2026-11-01
+
+### Changed
+- Bumped integration version to `0.6.0` and updated minimum library requirement to `casambi-classic-ble>=0.6.0`.
+- Includes eager disconnect callback race fix and BlueZ D-Bus handle/notification cleanup on unexpected link drops.
+- Eliminates legacy `pickle` deserialization on cache load for robust security.
+
+### Added
+- Added `async_remove_config_entry_device` hook in integration lifecycle, enabling deletion of stale/moved units from the Home Assistant device registry without deleting the integration entry.
+
+### Fixed
+- Fixed invalid `supported_color_modes` on mixed light groups by removing `BRIGHTNESS`/`ONOFF` placeholders when dedicated color modes (`RGB`, `COLOR_TEMP`) are present, and falling back to `ONOFF` instead of `UNKNOWN` on groups with no light controls.
 
 ### Changed
 - Bumped integration version to `0.5.1` and updated minimum library requirement to `casambi-classic-ble>=0.5.1`.

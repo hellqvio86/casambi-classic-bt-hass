@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.6] - 2026-11-01
+
+### Changed
+- Bumped integration version to `0.3.6` and updated minimum library requirement to `casambi-classic-ble>=0.3.6`.
+- Includes validated status opcode parsing (`0x03`) and enhanced beacon address matching and normalization.
+
 ## [0.3.5] - 2026-11-01
 
 ### Changed

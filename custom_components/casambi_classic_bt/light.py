@@ -81,7 +81,8 @@ class CasambiLight(CasambiEntity, LightEntity, metaclass=ABCMeta):
     def _capabilities_helper(self, unit: Unit) -> set[ColorMode]:
         supported: set[ColorMode] = set()
         unit_modes = {
-            uc.type.value if hasattr(uc.type, "value") else uc.type for uc in unit.unitType.controls
+            uc.type.value if hasattr(uc.type, "value") else uc.type
+            for uc in unit.unit_type.controls
         }
 
         if UnitControlType.RGB.value in unit_modes and UnitControlType.WHITE.value in unit_modes:
@@ -131,7 +132,7 @@ class CasambiLightUnit(CasambiLight, CasambiUnitEntity):
         """Initialize a Casambi light entity."""
         self._attr_supported_color_modes = self._capabilities_helper(unit)
 
-        temp_control = unit.unitType.get_control(UnitControlType.TEMPERATURE)
+        temp_control = unit.unit_type.get_control(UnitControlType.TEMPERATURE)
         if temp_control is not None:
             self._attr_min_color_temp_kelvin = temp_control.min  # type: ignore[assignment]
             self._attr_max_color_temp_kelvin = temp_control.max  # type: ignore[assignment]
@@ -142,13 +143,17 @@ class CasambiLightUnit(CasambiLight, CasambiUnitEntity):
         super().__init__(api, desc, unit)
 
     @property
-    def is_on(self) -> bool:
-        """Return True if the unit is on."""
+    def is_on(self) -> bool | None:
+        """Return True if the unit is on, or None if unavailable."""
+        if not self.available:
+            return None
         return self._obj.is_on
 
     @property
     def brightness(self) -> int | None:
         """Return the brightness of the unit."""
+        if not self.available:
+            return None
         unit = cast("Unit", self._obj)
         if unit.state is not None:
             return unit.state.dimmer
@@ -253,15 +258,23 @@ class CasambiLightGroup(CasambiLight, CasambiNetworkGroup):
         super().__init__(api, desc, group)
 
     @property
-    def is_on(self) -> bool:
-        """Return True if any unit in the group is on."""
-        return any(u.is_on for u in self._unit_map.values())
+    def is_on(self) -> bool | None:
+        """Return True if any online unit in the group is on, or None if unavailable."""
+        if not self.available:
+            return None
+        return any(u.online and u.is_on for u in self._unit_map.values())
 
     @property
     def brightness(self) -> int | None:
-        """Return the brightness of the first fitting unit of the group."""
+        """Return the brightness of the first fitting online unit of the group."""
+        if not self.available:
+            return None
         for unit in self._unit_map.values():
-            if unit.unitType.get_control(UnitControlType.DIMMER) and unit.state is not None:
+            if (
+                unit.online
+                and unit.unit_type.get_control(UnitControlType.DIMMER)
+                and unit.state is not None
+            ):
                 return unit.state.dimmer
         return None
 
@@ -269,7 +282,7 @@ class CasambiLightGroup(CasambiLight, CasambiNetworkGroup):
     def rgb_color(self) -> tuple[int, int, int] | None:
         """Return the rgb color of the first fitting unit of the group."""
         for unit in self._unit_map.values():
-            if unit.unitType.get_control(UnitControlType.RGB) and unit.state is not None:
+            if unit.unit_type.get_control(UnitControlType.RGB) and unit.state is not None:
                 return unit.state.rgb
         return None
 
@@ -278,8 +291,8 @@ class CasambiLightGroup(CasambiLight, CasambiNetworkGroup):
         """Return the rgw color of the first fitting unit of the group."""
         for unit in self._unit_map.values():
             if (
-                unit.unitType.get_control(UnitControlType.RGB)
-                and unit.unitType.get_control(UnitControlType.WHITE)
+                unit.unit_type.get_control(UnitControlType.RGB)
+                and unit.unit_type.get_control(UnitControlType.WHITE)
                 and unit.state is not None
             ):
                 return (*unit.state.rgb, unit.state.white)  # type: ignore[misc]
@@ -289,7 +302,7 @@ class CasambiLightGroup(CasambiLight, CasambiNetworkGroup):
     def color_temp_kelvin(self) -> int | None:
         """Return the color temperature in Kelvin of the first fitting unit of the group."""
         for unit in self._unit_map.values():
-            if unit.unitType.get_control(UnitControlType.TEMPERATURE) and unit.state is not None:
+            if unit.unit_type.get_control(UnitControlType.TEMPERATURE) and unit.state is not None:
                 return unit.state.temperature
         return None
 
@@ -297,7 +310,7 @@ class CasambiLightGroup(CasambiLight, CasambiNetworkGroup):
     def xy_color(self) -> tuple[float, float] | None:
         """Return the XY color value of the first fitting unit of the group."""
         for unit in self._unit_map.values():
-            if unit.unitType.get_control(UnitControlType.XY) and unit.state is not None:
+            if unit.unit_type.get_control(UnitControlType.XY) and unit.state is not None:
                 return unit.state.xy
         return None
 

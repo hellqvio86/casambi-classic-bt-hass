@@ -6,7 +6,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from bleak.backends.device import BLEDevice
-from casambi_classic_ble import AuthenticationError, NetworkNotFoundError
+from casambi_classic_ble import (
+    AuthenticationError,
+    BluetoothDeviceNotFoundError,
+    BluetoothError,
+    NetworkNotFoundError,
+    ProtocolError,
+    UnsupportedProtocolVersion,
+)
 from homeassistant.components.bluetooth.models import BluetoothServiceInfoBleak
 from homeassistant.const import CONF_ADDRESS, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
@@ -531,3 +538,134 @@ async def test_config_flow_reauth_step_invalid_auth(mock_hass: HomeAssistant) ->
         result = await flow.async_step_reauth_confirm(user_input={CONF_PASSWORD: "wrong-password"})
         assert result["type"] == FlowResultType.FORM
         assert result["errors"] == {"base": "invalid_auth"}
+
+
+@pytest.mark.asyncio
+async def test_config_flow_user_step_does_not_mutate_caller_dict(
+    mock_hass: HomeAssistant,
+) -> None:
+    """Verify async_step_user does not mutate the caller's user_input dictionary in-place."""
+    flow = ConfigFlow()
+    flow.hass = mock_hass
+
+    caller_input = {
+        CONF_ADDRESS: "aa:bb:cc:dd:ee:ff",
+        CONF_PASSWORD: MOCK_PASSWORD,
+        CONF_IMPORT_GROUPS: True,
+    }
+
+    with (
+        patch(
+            "custom_components.casambi_classic_bt.config_flow.async_scanner_count",
+            return_value=1,
+        ),
+        patch(
+            "custom_components.casambi_classic_bt.config_flow._validate_input",
+            return_value={"title": "My Mesh", "id": MOCK_MAC},
+        ),
+        patch.object(flow, "async_set_unique_id", return_value=None),
+    ):
+        result = await flow.async_step_user(user_input=caller_input)
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_ADDRESS] == MOCK_MAC
+        # Caller's dictionary must remain untouched
+        assert caller_input[CONF_ADDRESS] == "aa:bb:cc:dd:ee:ff"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("exc", "expected_error"),
+    [
+        (UnsupportedProtocolVersion("Protocol 11 not supported"), "unsupported_firmware"),
+        (ProtocolError("Handshake failed"), "unsupported_firmware"),
+        (TimeoutError("Connection timed out"), "timeout"),
+        (BluetoothDeviceNotFoundError("No device"), "cannot_connect"),
+        (BluetoothError("GATT error"), "cannot_connect"),
+        (NetworkNotFoundError("Network missing"), "cannot_connect"),
+        (AuthenticationError("Bad password"), "invalid_auth"),
+        (RuntimeError("Unexpected crash"), "unknown"),
+    ],
+)
+async def test_config_flow_granular_error_mapping(
+    mock_hass: HomeAssistant,
+    valid_user_input: dict[str, str | bool],
+    exc: Exception,
+    expected_error: str,
+) -> None:
+    """Verify both user and reauth_confirm steps map exceptions to actionable error keys."""
+    flow = ConfigFlow()
+    flow.hass = mock_hass
+
+    with (
+        patch(
+            "custom_components.casambi_classic_bt.config_flow.async_scanner_count",
+            return_value=1,
+        ),
+        patch(
+            "custom_components.casambi_classic_bt.config_flow._validate_input",
+            side_effect=exc,
+        ),
+    ):
+        user_res = await flow.async_step_user(user_input=dict(valid_user_input))
+        assert user_res["type"] == FlowResultType.FORM
+        assert user_res["errors"] == {"base": expected_error}
+
+        mock_entry = MagicMock()
+        mock_entry.data = dict(valid_user_input)
+        flow.entry = mock_entry
+        reauth_res = await flow.async_step_reauth_confirm(
+            user_input={CONF_PASSWORD: "new-password"}
+        )
+        assert reauth_res["type"] == FlowResultType.FORM
+        assert reauth_res["errors"] == {"base": expected_error}
+
+
+@pytest.mark.asyncio
+async def test_validate_input_reauth_clears_cached_session_and_forces_online(
+    mock_hass: HomeAssistant,
+    mock_ble_device: BLEDevice,
+    tmp_path: Path,
+) -> None:
+    """Verify force_online=True clears stale cached session files and forces online login."""
+    data = {
+        CONF_ADDRESS: MOCK_MAC,
+        CONF_PASSWORD: "new-password",
+    }
+
+    uuid_str = MOCK_MAC.replace(":", "").lower()
+    net_dir = tmp_path / ".storage" / DOMAIN / uuid_str
+    net_dir.mkdir(parents=True, exist_ok=True)
+    (net_dir / "casambi_network_id.txt").write_text("cached_network_id", encoding="utf-8")
+    session_file = net_dir / "casambi_session.json"
+    session_file.write_text('{"session": "stale_token"}', encoding="utf-8")
+
+    mock_casa = MagicMock()
+    mock_casa.connect = AsyncMock()
+    mock_casa.disconnect = AsyncMock()
+    mock_casa.invalidate_cache = AsyncMock()
+    mock_casa.network_name = "Reauthed Network"
+
+    with (
+        patch(
+            "custom_components.casambi_classic_bt.config_flow.async_ble_device_from_address",
+            return_value=mock_ble_device,
+        ),
+        patch(
+            "custom_components.casambi_classic_bt.config_flow.get_async_client",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "custom_components.casambi_classic_bt.config_flow.Casambi",
+            return_value=mock_casa,
+        ),
+    ):
+        result = await _validate_input(mock_hass, data, force_online=True)
+
+        assert not session_file.exists()
+        mock_casa.connect.assert_awaited_once_with(
+            address=mock_ble_device,
+            password="new-password",
+            force_offline=False,
+        )
+        mock_casa.disconnect.assert_awaited_once()
+        assert result == {"title": "Reauthed Network", "id": MOCK_MAC}

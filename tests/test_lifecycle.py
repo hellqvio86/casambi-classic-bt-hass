@@ -676,3 +676,55 @@ async def test_canary_password_never_logged_or_persisted_in_plaintext(
 
     # Assert canary password never appeared in any log record
     assert canary_password not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_connect_and_unit_update_callbacks_are_not_duplicated(
+    mock_hass: HomeAssistant,
+    mock_ble_device: BLEDevice,
+    test_entry: ConfigEntry,
+) -> None:
+    """Verify repeated connect() or register_unit_updates() calls do not duplicate callbacks."""
+    api = CasambiApi(
+        hass=mock_hass,
+        conf_entry=test_entry,
+        address=MOCK_MAC,
+        password=MOCK_PASSWORD,
+    )
+
+    mock_casa = MagicMock()
+    mock_casa.connect = AsyncMock()
+    mock_casa.connected = True
+    mock_casa.disconnect = AsyncMock()
+    mock_casa.register_disconnect_callback = MagicMock()
+    mock_casa.register_unit_changed_handler = MagicMock()
+    api._casa = mock_casa
+
+    with patch(
+        "custom_components.casambi_classic_bt.bluetooth.async_ble_device_from_address",
+        return_value=mock_ble_device,
+    ):
+        await api.connect()
+        await api.connect()
+
+    # Disconnect and unit_changed handlers must only be registered once
+    mock_casa.register_disconnect_callback.assert_called_once()
+    mock_casa.register_unit_changed_handler.assert_called_once()
+
+    mock_unit = MagicMock()
+    mock_unit.device_id = 7
+    received: list[int] = []
+
+    def unit_cb(u: MagicMock) -> None:
+        received.append(u.device_id)
+
+    api.register_unit_updates(mock_unit, unit_cb)
+    api.register_unit_updates(mock_unit, unit_cb)
+
+    api._unit_changed_handler(mock_unit)
+    assert received == [7]
+
+    api.unregister_unit_updates(mock_unit, unit_cb)
+    api.unregister_unit_updates(mock_unit, unit_cb)
+    api._unit_changed_handler(mock_unit)
+    assert received == [7]

@@ -18,7 +18,10 @@
     },
     "error": {
       "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "invalid_address": "The bluetooth MAC address of the network is invalid.",
       "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
+      "timeout": "Connection timed out.",
+      "unsupported_firmware": "Unsupported firmware version. This integration only supports Casambi Classic firmware.",
       "unknown": "[%key:common::config_flow::error::unknown%]"
     },
     "abort": {

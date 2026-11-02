@@ -38,7 +38,7 @@ class CasambiScene(SceneEntity, CasambiNetworkEntity):
         self._obj: Scene
         super().__init__(
             api=api,
-            description=EntityDescription(key=str(scene.sceneId), name=scene.name),
+            description=EntityDescription(key=str(scene.scene_id), name=scene.name),
             obj=scene,
         )
 

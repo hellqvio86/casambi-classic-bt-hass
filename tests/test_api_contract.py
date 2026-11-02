@@ -51,9 +51,17 @@ def test_casambi_public_api_signatures() -> None:
         sig = inspect.signature(getattr(Casambi, method_name))
         assert "target" in sig.parameters or "unit" in sig.parameters
 
-    # properties
+    # properties and public cache boundary helpers
+    from packaging.version import Version
+
     assert isinstance(inspect.getattr_static(Casambi, "network_name"), property)
     assert isinstance(inspect.getattr_static(Casambi, "network_id"), property)
+    if Version(casambi_classic_ble.__version__) >= Version("0.8.5"):
+        assert callable(getattr(Casambi, "has_cached_network", None))
+        assert callable(getattr(Casambi, "check_cached_network", None))
+        assert callable(getattr(Casambi, "async_has_cached_network", None))
+        assert callable(getattr(Casambi, "clear_cached_session", None))
+        assert callable(getattr(Casambi, "async_clear_cached_session", None))
 
 
 def test_integration_calls_bind_to_library_signatures() -> None:
@@ -106,7 +114,7 @@ def test_integration_calls_bind_to_library_signatures() -> None:
 
 
 def test_no_deprecated_aliases_called_in_integration() -> None:
-    """Static AST check verifying no deprecated aliases are invoked anywhere in custom_components."""
+    """Static AST check verifying no deprecated aliases or private cache files are used in custom_components."""
     deprecated_names = {
         "invalidateCache",
         "networkName",
@@ -116,11 +124,20 @@ def test_no_deprecated_aliases_called_in_integration() -> None:
         "registerDisconnectCallback",
         "registerUnitChangedHandler",
         "forceOffline",
+        "groudId",
+        "sceneId",
+        "deviceId",
+        "unitType",
+        "firmwareVersion",
     }
 
     cc_dir = Path(__file__).resolve().parent.parent / "custom_components" / "casambi_classic_bt"
     for py_file in cc_dir.glob("**/*.py"):
-        tree = ast.parse(py_file.read_text(encoding="utf-8"), filename=str(py_file))
+        source = py_file.read_text(encoding="utf-8")
+        assert '"networkid"' not in source and "'networkid'" not in source, (
+            f"Found hardcoded private cache filename 'networkid' in {py_file.name}"
+        )
+        tree = ast.parse(source, filename=str(py_file))
         for node in ast.walk(tree):
             if isinstance(node, ast.Attribute) and node.attr in deprecated_names:
                 raise AssertionError(

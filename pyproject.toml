@@ -1,6 +1,6 @@
 [project]
 name = "casambi-classic-bt-hass"
-version = "0.8.4"
+version = "0.8.5"
 description = "Home Assistant custom integration for Casambi Classic networks using Bluetooth"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -11,6 +11,7 @@ authors = [
 [dependency-groups]
 dev = [
     "casambi-classic-ble>=0.8.2",
+    "mypy>=1.5.0",
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
     "ruff>=0.8.0",
@@ -19,6 +20,7 @@ dev = [
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 pythonpath = ["."]
 
@@ -29,3 +31,8 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+disable_error_code = ["call-arg"]

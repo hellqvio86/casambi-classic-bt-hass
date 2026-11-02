@@ -44,7 +44,7 @@ async def async_setup_entry(
         for g in casa_api.get_groups():
             has_vert = False
             for u in g.units:
-                if u.unitType.get_control(UnitControlType.VERTICAL) is not None:
+                if u.unit_type.get_control(UnitControlType.VERTICAL) is not None:
                     has_vert = True
                     break
             if has_vert:
@@ -110,7 +110,7 @@ class CasambiVerticalNumberGroup(CasambiVerticalNumber, CasambiNetworkGroup):
         """Initialize a Casambi vertical group entity."""
 
         desc = TypedNumberEntityDescription(
-            key=str(group.groudId), name=group.name, entity_type="vertical"
+            key=str(group.group_id), name=group.name, entity_type="vertical"
         )
 
         self._obj: Group

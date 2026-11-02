@@ -100,7 +100,7 @@ class CasambiNetworkGroup(CasambiNetworkEntity, metaclass=ABCMeta):
         """Initialize Casambi Entity."""
         super().__init__(api, description, obj)
 
-        self._unit_map = dict(zip([u.deviceId for u in obj.units], obj.units, strict=True))
+        self._unit_map = dict(zip([u.device_id for u in obj.units], obj.units, strict=True))
 
     @property
     def available(self) -> bool:
@@ -112,13 +112,13 @@ class CasambiNetworkGroup(CasambiNetworkEntity, metaclass=ABCMeta):
         group = cast("CasambiGroup", self._obj)
         _LOGGER.debug(
             "Handling state change for unit %i in group %i",
-            unit.deviceId,
-            group.groudId,
+            unit.device_id,
+            group.group_id,
         )
         if unit.state:
-            self._unit_map[unit.deviceId] = unit
+            self._unit_map[unit.device_id] = unit
         else:
-            own_unit = self._unit_map[unit.deviceId]
+            own_unit = self._unit_map[unit.device_id]
             # This update doesn't have a state.
             # This can happen if the unit isn't online so only look at that part.
             own_unit._online = unit.online  # noqa: SLF001
@@ -159,9 +159,9 @@ class CasambiUnitEntity(CasambiEntity, metaclass=ABCMeta):
         unit = cast("CasambiUnit", self._obj)
         return DeviceInfo(
             name=unit.name,
-            manufacturer=unit.unitType.manufacturer,
-            model=unit.unitType.model,
-            sw_version=unit.firmwareVersion,
+            manufacturer=unit.unit_type.manufacturer,
+            model=unit.unit_type.model,
+            sw_version=unit.firmware_version,
             identifiers={(DOMAIN, unit.uuid)},
             via_device_id=device_registry.async_get_device_id_by_identifier(
                 self.hass,
@@ -178,7 +178,7 @@ class CasambiUnitEntity(CasambiEntity, metaclass=ABCMeta):
 
     @callback
     def _change_callback(self, unit: CasambiUnit) -> None:
-        _LOGGER.debug("Handling state change for unit %i", unit.deviceId)
+        _LOGGER.debug("Handling state change for unit %i", unit.device_id)
         if unit.state:
             self._obj = unit
         else:

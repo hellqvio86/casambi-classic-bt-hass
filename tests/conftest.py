@@ -195,6 +195,9 @@ if "homeassistant" not in sys.modules:
             def async_write_ha_state(self) -> None:
                 pass
 
+            def schedule_update_ha_state(self, force_refresh: bool = False) -> None:
+                pass
+
         from dataclasses import dataclass
 
         @dataclass(kw_only=True)

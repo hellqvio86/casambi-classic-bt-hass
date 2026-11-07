@@ -1,4 +1,4 @@
-.PHONY: help setup lint format clean hooks package secrets trivy test
+.PHONY: help setup lint format clean hooks package secrets trivy test renovate renovate-summary
 
 help:
 	@echo "Available commands:"
@@ -56,3 +56,9 @@ package:
 	@echo "Packaging custom component..."
 	cd custom_components && zip -r ../casambi_classic_bt.zip casambi_classic_bt
 	@echo "Packaged casambi_classic_bt.zip successfully!"
+
+renovate:
+	@./bin/renovate/run.sh
+
+renovate-summary:
+	@./bin/renovate/run.sh --summary

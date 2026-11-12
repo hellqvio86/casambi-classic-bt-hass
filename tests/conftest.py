@@ -172,6 +172,8 @@ if "homeassistant" not in sys.modules:
 
         ha_dr.format_mac = format_mac
         ha_dr.DeviceEntry = MagicMock
+        ha_dr.CONNECTION_BLUETOOTH = "bluetooth"
+        ha_dr.async_get_device_id_by_identifier = MagicMock(return_value="dev-1")
         sys.modules["homeassistant.helpers.device_registry"] = ha_dr
 
         # homeassistant.helpers.httpx_client
@@ -200,18 +202,72 @@ if "homeassistant" not in sys.modules:
 
         from dataclasses import dataclass
 
+        class EntityCategory(StrEnum):
+            DIAGNOSTIC = "diagnostic"
+            CONFIG = "config"
+
         @dataclass(kw_only=True)
         class EntityDescription:
             key: str = ""
             name: str | None = None
+            device_class: Any = None
+            entity_category: Any = None
 
         class DeviceInfo(dict):
             pass
 
         ha_entity.Entity = Entity
+        ha_entity.EntityCategory = EntityCategory
         ha_entity.EntityDescription = EntityDescription
         ha_entity.DeviceInfo = DeviceInfo
         sys.modules["homeassistant.helpers.entity"] = ha_entity
+
+        # homeassistant.components.binary_sensor
+        ha_bs = types.ModuleType("homeassistant.components.binary_sensor")
+
+        class BinarySensorDeviceClass(StrEnum):
+            CONNECTIVITY = "connectivity"
+
+        @dataclass(kw_only=True)
+        class BinarySensorEntityDescription(EntityDescription):
+            pass
+
+        class BinarySensorEntity(Entity):
+            pass
+
+        ha_bs.BinarySensorDeviceClass = BinarySensorDeviceClass
+        ha_bs.BinarySensorEntityDescription = BinarySensorEntityDescription
+        ha_bs.BinarySensorEntity = BinarySensorEntity
+        sys.modules["homeassistant.components.binary_sensor"] = ha_bs
+
+        # homeassistant.components.number
+        ha_num = types.ModuleType("homeassistant.components.number")
+
+        class NumberDeviceClass(StrEnum):
+            ILLUMINANCE = "illuminance"
+
+        @dataclass(kw_only=True)
+        class NumberEntityDescription(EntityDescription):
+            pass
+
+        class NumberEntity(Entity):
+            pass
+
+        ha_num.NumberDeviceClass = NumberDeviceClass
+        ha_num.NumberEntityDescription = NumberEntityDescription
+        ha_num.NumberEntity = NumberEntity
+        sys.modules["homeassistant.components.number"] = ha_num
+
+        # homeassistant.components.scene
+        ha_scene = types.ModuleType("homeassistant.components.scene")
+
+        class Scene(Entity):
+            @property
+            def name(self) -> str | None:
+                return getattr(self.entity_description, "name", None)
+
+        ha_scene.Scene = Scene
+        sys.modules["homeassistant.components.scene"] = ha_scene
 
         # homeassistant.helpers.entity_platform
         ha_platform = types.ModuleType("homeassistant.helpers.entity_platform")

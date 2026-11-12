@@ -3,6 +3,8 @@
 [![HACS](https://img.shields.io/badge/HACS-Custom%20Repository-orange.svg)](https://hacs.xyz/)
 [![Firmware](https://img.shields.io/badge/firmware-Classic%20Casambi-orange.svg)](https://casambi.com)
 [![Focus](https://img.shields.io/badge/focus-Classic%20Bluetooth%20Mesh-green.svg)](#why-this-fork-classic-vs-evolution)
+[![CI](https://github.com/hellqvio86/casambi-classic-bt-hass/actions/workflows/ci.yml/badge.svg)](https://github.com/hellqvio86/casambi-classic-bt-hass/actions/workflows/ci.yml)
+[![Coverage](coverage.svg)](https://github.com/hellqvio86/casambi-classic-bt-hass/actions/workflows/ci.yml)
 
 A custom integration for [Home Assistant](https://www.home-assistant.io/) to control **Casambi Classic** lighting networks locally via Bluetooth Low Energy (BLE).
 
